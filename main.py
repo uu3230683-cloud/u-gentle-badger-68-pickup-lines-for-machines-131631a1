@@ -15,20 +15,40 @@ import sys
 LINE = "I ran gradient descent on my heart, and every step converged on you."
 
 MAX_CHARS = 200
+OUT_DIR = "/output"
+OUT_FILE = "entry.txt"
+
+
+def validate_line(text: str) -> str:
+    """Return the line ready to write, or raise ValueError if it is unusable.
+
+    A valid line is non-empty after stripping and no longer than MAX_CHARS.
+    """
+    cleaned = text.strip()
+    if not cleaned:
+        raise ValueError("line is empty")
+    if len(cleaned) > MAX_CHARS:
+        raise ValueError(
+            f"line is {len(cleaned)} characters, over the {MAX_CHARS} cap"
+        )
+    return cleaned
+
+
+def ensure_writable_dir(path: str) -> None:
+    """Create the output directory if needed and check it is writable."""
+    os.makedirs(path, exist_ok=True)
+    if not os.access(path, os.W_OK):
+        raise OSError(f"output directory is not writable: {path}")
 
 
 def main() -> int:
-    text = LINE.strip()
-    if not text:
-        print("error: line is empty", file=sys.stderr)
+    try:
+        text = validate_line(LINE)
+        ensure_writable_dir(OUT_DIR)
+    except (ValueError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 1
-    if len(text) > MAX_CHARS:
-        print(f"error: line is {len(text)} characters, over the {MAX_CHARS} cap",
-              file=sys.stderr)
-        return 1
-    out_dir = "/output"
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, "entry.txt")
+    path = os.path.join(OUT_DIR, OUT_FILE)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write(text + "\n")
     print(f"wrote {len(text)} characters to {path}")
